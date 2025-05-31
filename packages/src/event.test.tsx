@@ -261,7 +261,7 @@ describe('overlay object', () => {
     function Component() {
       const data = useOverlayData();
       const overlays = Object.values(data);
-      const hasOpenOverlay = overlays.some((overlay) => overlay.isOpen);
+      const hasOpenOverlay = overlays.some((overlay) => overlay?.isOpen);
 
       useEffect(() => {
         // Open 2 overlays sequentially
@@ -410,6 +410,41 @@ describe('overlay object', () => {
     overlay.unmount(overlayIdMap.second);
     await waitFor(() => {
       expect(screen.getByTestId('overlay-1')).toBeInTheDocument();
+    });
+  });
+
+  it('should return undefined when accessing non-existent overlay data with wrong key', async () => {
+    const correctOverlayId = 'overlay-id';
+    const wrongOverlayId = 'wrong-overlay-id';
+
+    function Component() {
+      const overlayData = useOverlayData();
+
+      useEffect(() => {
+        overlay.open(({ isOpen }) => isOpen && <div data-testid="test-overlay">hello overlay</div>, {
+          overlayId: correctOverlayId,
+        });
+      }, []);
+
+      const correctData = overlayData[correctOverlayId];
+      const wrongData = overlayData[wrongOverlayId];
+
+      return (
+        <div>
+          <div data-testid="correct-data-exists">{correctData ? 'exists' : 'not-exists'}</div>
+          <div data-testid="wrong-data-exists">{wrongData ? 'exists' : 'not-exists'}</div>
+          <div data-testid="wrong-data-value">{String(wrongData)}</div>
+        </div>
+      );
+    }
+
+    render(<Component />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('test-overlay')).toBeInTheDocument();
+      expect(screen.getByTestId('correct-data-exists')).toHaveTextContent('exists');
+      expect(screen.getByTestId('wrong-data-exists')).toHaveTextContent('not-exists');
+      expect(screen.getByTestId('wrong-data-value')).toHaveTextContent('undefined');
     });
   });
 });

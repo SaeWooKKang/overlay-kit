@@ -17,7 +17,7 @@ type OverlayItem = {
 export type OverlayData = {
   current: OverlayId | null;
   overlayOrderList: OverlayId[];
-  overlayData: Record<OverlayId, OverlayItem>;
+  overlayData: Record<OverlayId, OverlayItem | undefined>;
 };
 
 type OverlayReducerAction =
@@ -28,12 +28,20 @@ type OverlayReducerAction =
   | { type: 'CLOSE_ALL' }
   | { type: 'REMOVE_ALL' };
 
+const isExistedOverlay = (overlay: OverlayItem | undefined): overlay is OverlayItem => {
+  return Boolean(overlay);
+}
+
+const isOpenOverlay = (overlay: OverlayItem | undefined): overlay is OverlayItem & { isOpen: true } => {
+  return isExistedOverlay(overlay) && overlay.isOpen === true;
+}
+
 export function overlayReducer(state: OverlayData, action: OverlayReducerAction): OverlayData {
   switch (action.type) {
     case 'ADD': {
-      const isExisted = state.overlayOrderList.includes(action.overlay.id);
+      const overlayData = state.overlayData[action.overlay.id];
 
-      if (isExisted && state.overlayData[action.overlay.id].isOpen === true) {
+      if (isExistedOverlay(overlayData) && overlayData.isOpen === true) {
         throw new Error("You can't open the multiple overlays with the same overlayId. Please set a different id.");
       }
 
@@ -43,7 +51,7 @@ export function overlayReducer(state: OverlayData, action: OverlayReducerAction)
          * @description Brings the overlay to the front when reopened after closing without unmounting.
          */
         overlayOrderList: [...state.overlayOrderList.filter((item) => item !== action.overlay.id), action.overlay.id],
-        overlayData: isExisted
+        overlayData: isExistedOverlay(overlayData)
           ? state.overlayData
           : {
               ...state.overlayData,
@@ -55,7 +63,7 @@ export function overlayReducer(state: OverlayData, action: OverlayReducerAction)
       const overlay = state.overlayData[action.overlayId];
 
       // ignore if the overlay don't exist or already open
-      if (overlay == null || overlay.isOpen) {
+      if (!isExistedOverlay(overlay) || isOpenOverlay(overlay)) {
         return state;
       }
 
@@ -74,12 +82,12 @@ export function overlayReducer(state: OverlayData, action: OverlayReducerAction)
       const overlay = state.overlayData[action.overlayId];
 
       // ignore if the overlay don't exist or already closed
-      if (overlay == null || !overlay.isOpen) {
+      if (!isExistedOverlay(overlay) || !isOpenOverlay(overlay)) {
         return state;
       }
 
-      const openedOverlayOrderList = state.overlayOrderList.filter(
-        (orderedOverlayId) => state.overlayData[orderedOverlayId].isOpen === true
+      const openedOverlayOrderList = state.overlayOrderList.filter((orderedOverlayId) =>
+        isOpenOverlay(state.overlayData[orderedOverlayId])
       );
       const targetIndexInOpenedList = openedOverlayOrderList.findIndex((item) => item === action.overlayId);
 
@@ -104,7 +112,7 @@ export function overlayReducer(state: OverlayData, action: OverlayReducerAction)
         overlayData: {
           ...state.overlayData,
           [action.overlayId]: {
-            ...state.overlayData[action.overlayId],
+            ...overlay,
             isOpen: false,
           },
         },
@@ -126,8 +134,8 @@ export function overlayReducer(state: OverlayData, action: OverlayReducerAction)
       const copiedOverlayData = { ...state.overlayData };
       delete copiedOverlayData[action.overlayId];
 
-      const openedOverlayOrderList = state.overlayOrderList.filter(
-        (orderedOverlayId) => state.overlayData[orderedOverlayId].isOpen === true
+      const openedOverlayOrderList = state.overlayOrderList.filter((orderedOverlayId) =>
+        isOpenOverlay(state.overlayData[orderedOverlayId])
       );
       const targetIndexInOpenedList = openedOverlayOrderList.findIndex((item) => item === action.overlayId);
 
@@ -158,19 +166,19 @@ export function overlayReducer(state: OverlayData, action: OverlayReducerAction)
         return state;
       }
 
+      const overlayData: OverlayData['overlayData'] = Object.keys(state.overlayData)
+        .map((key) => ({
+          [key]: {
+            ...state.overlayData[key]!,
+            isOpen: false,
+          },
+        }))
+        .reduce((acc, curr) => ({ ...acc, ...curr }), {});
+
       return {
         ...state,
         current: null,
-        overlayData: Object.keys(state.overlayData).reduce(
-          (prev, curr) => ({
-            ...prev,
-            [curr]: {
-              ...state.overlayData[curr],
-              isOpen: false,
-            } satisfies OverlayItem,
-          }),
-          {} satisfies Record<string, OverlayItem>
-        ),
+        overlayData,
       };
     }
     case 'REMOVE_ALL': {

@@ -5,9 +5,9 @@ describe('determineCurrentOverlayId', () => {
   it('should return the previous overlay when closing the last overlay', () => {
     const overlayOrderList = ['id1', 'id2', 'id3'];
     const overlayData = {
-      id1: { id: 'id1', componentKey: 'key1', isOpen: true, controller: () => null },
-      id2: { id: 'id2', componentKey: 'key2', isOpen: true, controller: () => null },
-      id3: { id: 'id3', componentKey: 'key3', isOpen: true, controller: () => null },
+      id1: { id: 'id1', componentKey: 'key1', isOpen: true, controller: () => null, isMounted: true },
+      id2: { id: 'id2', componentKey: 'key2', isOpen: true, controller: () => null, isMounted: true },
+      id3: { id: 'id3', componentKey: 'key3', isOpen: true, controller: () => null, isMounted: true },
     };
 
     const result = determineCurrentOverlayId(overlayOrderList, overlayData, 'id3');
@@ -18,9 +18,9 @@ describe('determineCurrentOverlayId', () => {
   it('should return the last overlay when closing an intermediate overlay', () => {
     const overlayOrderList = ['id1', 'id2', 'id3'];
     const overlayData = {
-      id1: { id: 'id1', componentKey: 'key1', isOpen: true, controller: () => null },
-      id2: { id: 'id2', componentKey: 'key2', isOpen: true, controller: () => null },
-      id3: { id: 'id3', componentKey: 'key3', isOpen: true, controller: () => null },
+      id1: { id: 'id1', componentKey: 'key1', isOpen: true, controller: () => null, isMounted: true },
+      id2: { id: 'id2', componentKey: 'key2', isOpen: true, controller: () => null, isMounted: true },
+      id3: { id: 'id3', componentKey: 'key3', isOpen: true, controller: () => null, isMounted: true },
     };
 
     const result = determineCurrentOverlayId(overlayOrderList, overlayData, 'id2');
@@ -31,9 +31,9 @@ describe('determineCurrentOverlayId', () => {
   it('should skip closed overlays when determining the current overlay', () => {
     const overlayOrderList = ['id1', 'id2', 'id3'];
     const overlayData = {
-      id1: { id: 'id1', componentKey: 'key1', isOpen: true, controller: () => null },
-      id2: { id: 'id2', componentKey: 'key2', isOpen: false, controller: () => null },
-      id3: { id: 'id3', componentKey: 'key3', isOpen: true, controller: () => null },
+      id1: { id: 'id1', componentKey: 'key1', isOpen: true, controller: () => null, isMounted: true },
+      id2: { id: 'id2', componentKey: 'key2', isOpen: false, controller: () => null, isMounted: true },
+      id3: { id: 'id3', componentKey: 'key3', isOpen: true, controller: () => null, isMounted: true },
     };
 
     const result = determineCurrentOverlayId(overlayOrderList, overlayData, 'id3');
@@ -44,7 +44,7 @@ describe('determineCurrentOverlayId', () => {
   it('should return null when closing the only open overlay', () => {
     const overlayOrderList = ['id1'];
     const overlayData = {
-      id1: { id: 'id1', componentKey: 'key1', isOpen: true, controller: () => null },
+      id1: { id: 'id1', componentKey: 'key1', isOpen: true, controller: () => null, isMounted: true },
     };
 
     const result = determineCurrentOverlayId(overlayOrderList, overlayData, 'id1');
